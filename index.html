@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Traceback Test App</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+    .auth-wrapper { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+    .auth-card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 40px; width: 100%; max-width: 420px; }
+    .auth-card h1 { font-size: 24px; font-weight: 700; margin-bottom: 8px; color: #f1f5f9; }
+    .auth-card p { color: #94a3b8; font-size: 14px; margin-bottom: 28px; }
+    .form-group { margin-bottom: 18px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 500; color: #94a3b8; margin-bottom: 6px; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 14px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #e2e8f0; font-size: 14px; outline: none; }
+    .form-group textarea { resize: vertical; min-height: 80px; }
+    .btn-primary { width: 100%; padding: 11px; background: #6366f1; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .btn-primary:hover { background: #4f46e5; }
+    .btn-secondary { padding: 8px 16px; background: transparent; color: #6366f1; border: 1px solid #6366f1; border-radius: 8px; font-size: 13px; cursor: pointer; }
+    .btn-danger { padding: 8px 16px; background: #ef4444; color: white; border: none; border-radius: 8px; font-size: 13px; cursor: pointer; }
+    .switch-link { text-align: center; margin-top: 20px; font-size: 13px; color: #94a3b8; }
+    .switch-link a { color: #6366f1; cursor: pointer; text-decoration: none; font-weight: 500; }
+    .error-msg { background: #ef444420; border: 1px solid #ef4444; color: #fca5a5; border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-bottom: 18px; display: none; }
+    .success-msg { background: #22c55e20; border: 1px solid #22c55e; color: #86efac; border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-bottom: 18px; display: none; }
+    .navbar { background: #1e293b; border-bottom: 1px solid #334155; padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; }
+    .navbar-brand { font-size: 18px; font-weight: 700; color: #6366f1; }
+    .navbar-user { display: flex; align-items: center; gap: 12px; font-size: 14px; color: #94a3b8; }
+    .dashboard-body { padding: 32px; max-width: 1000px; margin: 0 auto; }
+    .dashboard-body h2 { font-size: 20px; font-weight: 600; margin-bottom: 24px; color: #f1f5f9; }
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; }
+    .stat-card { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 20px; }
+    .stat-card .stat-label { font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+    .stat-card .stat-value { font-size: 28px; font-weight: 700; color: #6366f1; }
+    .task-form-card { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 24px; margin-bottom: 24px; }
+    .task-form-card h3 { font-size: 16px; font-weight: 600; margin-bottom: 18px; color: #f1f5f9; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .task-list { list-style: none; }
+    .task-item { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 14px 18px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+    .task-title { font-size: 14px; font-weight: 500; }
+    .task-meta { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+    .badge { padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
+    .badge-high { background: #ef444430; color: #fca5a5; }
+    .badge-medium { background: #f59e0b30; color: #fcd34d; }
+    .badge-low { background: #22c55e30; color: #86efac; }
+
+    /* PAGE SWITCHING — CSS class based, Playwright can see all elements */
+    .page { display: none; }
+    .page.active { display: block; }
+    #login-page.active { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN PAGE -->
+<div id="login-page" class="page active">
+  <div class="auth-card">
+    <h1>Welcome back</h1>
+    <p>Sign in to your account to continue</p>
+    <div id="login-error" class="error-msg">Invalid username or password</div>
+    <div class="form-group">
+      <label for="login-username">Username</label>
+      <input type="text" id="login-username" placeholder="Enter your username" />
+    </div>
+    <div class="form-group">
+      <label for="login-password">Password</label>
+      <input type="password" id="login-password" placeholder="Enter your password" />
+    </div>
+    <button id="signin-btn" class="btn-primary" onclick="handleLogin()">Sign in</button>
+    <div class="switch-link">Don't have an account? <a onclick="showPage('register-page')">Register</a></div>
+  </div>
+</div>
+
+<!-- REGISTER PAGE -->
+<div id="register-page" class="page">
+  <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;">
+  <div class="auth-card">
+    <h1>Create account</h1>
+    <p>Fill in your details to get started</p>
+    <div id="register-error" class="error-msg"></div>
+    <div id="register-success" class="success-msg">Account created! You can now sign in.</div>
+    <div class="form-group">
+      <label for="reg-username">Username</label>
+      <input type="text" id="reg-username" placeholder="Choose a username" />
+    </div>
+    <div class="form-group">
+      <label for="reg-email">Email</label>
+      <input type="email" id="reg-email" placeholder="Enter your email" />
+    </div>
+    <div class="form-group">
+      <label for="reg-password">Password</label>
+      <input type="password" id="reg-password" placeholder="Choose a password" />
+    </div>
+    <div class="form-group">
+      <label for="reg-role">Role</label>
+      <select id="reg-role">
+        <option value="">Select a role</option>
+        <option value="developer">Developer</option>
+        <option value="designer">Designer</option>
+        <option value="manager">Manager</option>
+        <option value="tester">Tester</option>
+      </select>
+    </div>
+    <button id="register-submit-btn" class="btn-primary" onclick="handleRegister()">Create account</button>
+    <div class="switch-link">Already have an account? <a onclick="showPage('login-page')">Sign in</a></div>
+  </div>
+  </div>
+</div>
+
+<!-- DASHBOARD PAGE -->
+<div id="dashboard-page" class="page">
+  <div class="navbar">
+    <div class="navbar-brand">Traceback App</div>
+    <div class="navbar-user">
+      <span id="navbar-username">user</span>
+      <button id="logout-btn" class="btn-danger" onclick="handleLogout()">Logout</button>
+    </div>
+  </div>
+  <div class="dashboard-body">
+    <h2>Dashboard</h2>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">Total Tasks</div><div class="stat-value" id="stat-total">0</div></div>
+      <div class="stat-card"><div class="stat-label">High Priority</div><div class="stat-value" id="stat-high">0</div></div>
+      <div class="stat-card"><div class="stat-label">Completed</div><div class="stat-value" id="stat-done">0</div></div>
+    </div>
+    <div class="task-form-card">
+      <h3>Add New Task</h3>
+      <div id="task-success" class="success-msg">Task added successfully!</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="task-title-input">Task Title</label>
+          <input type="text" id="task-title-input" placeholder="Enter task title" />
+        </div>
+        <div class="form-group">
+          <label for="task-priority-select">Priority</label>
+          <select id="task-priority-select">
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="task-description-input">Description</label>
+        <textarea id="task-description-input" placeholder="Describe the task..."></textarea>
+      </div>
+      <button id="add-task-btn" class="btn-primary" onclick="addTask()" style="width:auto;padding:10px 24px;">Add Task</button>
+    </div>
+    <h2>Your Tasks</h2>
+    <ul class="task-list" id="task-list"></ul>
+  </div>
+</div>
+
+<script>
+  const USERS = { "admin": "admin123", "testuser": "Test@123", "rachit": "Rachit@2209" };
+  let tasks = [], taskCounter = 0, currentUser = null;
+
+  function showPage(pageId) {
+    document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+    document.getElementById(pageId).classList.add('active');
+  }
+
+  function handleLogin() {
+    try {
+      const username = document.getElementById('login-username').value.trim();
+      const password = document.getElementById('login-password').value.trim();
+      const err = document.getElementById('login-error');
+      if (USERS[username] && USERS[username] === password) {
+        currentUser = username;
+        document.getElementById('navbar-username').textContent = username;
+        err.style.display = 'none';
+        showPage('dashboard-page');
+        updateStats();
+      } else {
+        err.style.display = 'block';
+      }
+    } catch (error) {
+      console.error('Login failed', error);
+    }
+  }
+
+  function handleRegister() {
+    try {
+      const username = document.getElementById('reg-username').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const password = document.getElementById('reg-password').value.trim();
+      const role = document.getElementById('reg-role').value;
+      const err = document.getElementById('register-error');
+      const suc = document.getElementById('register-success');
+      if (!username || !email || !password || !role) {
+        err.textContent = 'All fields are required.';
+        err.style.display = 'block';
+        suc.style.display = 'none';
+        return;
+      }
+      USERS[username] = password;
+      err.style.display = 'none';
+      suc.style.display = 'block';
+      setTimeout(() => showPage('login-page'), 1500);
+    } catch (error) {
+      console.error('Registration failed', error);
+    }
+  }
+
+  function handleLogout() {
+    try {
+      currentUser = null;
+      tasks = [];
+      showPage('login-page');
+    } catch (error) {
+      console.error('Logout failed', error);
+    }
+  }
+
+  function addTask() {
+    try {
+      const title = document.getElementById('task-title-input').value.trim();
+      const priority = document.getElementById('task-priority-select').value;
+      const description = document.getElementById('task-description-input').value.trim();
+      const suc = document.getElementById('task-success');
+      if (!title) return;
+      taskCounter++;
+      tasks.push({ id: taskCounter, title, priority, description });
+      document.getElementById('task-title-input').value = '';
+      document.getElementById('task-description-input').value = '';
+      suc.style.display = 'block';
+      setTimeout(() => suc.style.display = 'none', 2000);
+      renderTasks();
+      updateStats();
+    } catch (error) {
+      console.error('Add task failed', error);
+    }
+  }
+
+  function renderTasks() {
+    try {
+      const list = document.getElementById('task-list');
+      list.innerHTML = '';
+      tasks.forEach(task => {
+        const li = document.createElement('li');
+        li.className = 'task-item';
+        li.id = 'task-' + task.id;
+        li.innerHTML = `
+          <div>
+            <div class="task-title">${task.title}</div>
+            <div class="task-meta">${task.description || 'No description'}</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <span class="badge badge-${task.priority}">${task.priority}</span>
+            <button class="btn-secondary" id="complete-task-${task.id}" onclick="completeTask(${task.id})">Done</button>
+            <button class="btn-danger" id="delete-task-${task.id}" onclick="deleteTask(${task.id})">Delete</button>
+          </div>
+        `;
+        list.appendChild(li);
+      });
+    } catch (error) {
+      console.error('Render tasks failed', error);
+    }
+  }
+
+  function completeTask(id) {
+    try {
+      tasks = tasks.filter(t => t.id !== id);
+      document.getElementById('stat-done').textContent = parseInt(document.getElementById('stat-done').textContent) + 1;
+      renderTasks(); updateStats();
+    } catch (error) {
+      console.error('Complete task failed', error);
+    }
+  }
+
+  function deleteTask(id) {
+    try {
+      tasks = tasks.filter(t => t.id !== id);
+      renderTasks(); updateStats();
+    } catch (error) {
+      console.error('Delete task failed', error);
+    }
+  }
+
+  function updateStats() {
+    try {
+      document.getElementById('stat-total').textContent = tasks.length;
+      document.getElementById('stat-high').textContent = tasks.filter(t => t.priority === 'high').length;
+    } catch (error) {
+      console.error('Update stats failed', error);
+    }
+  }
+</script>
+</body>
+</html>
